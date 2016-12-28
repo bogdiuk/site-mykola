@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Тестую мерехтіння ламп</title>
+  <meta name="description" content="Почалось з того, що я помітив боковим зором легеньку дриганість однієї LED лампи.Лампи розжарення доволі інертні і за 10мс не встигають втратити яскравість, ...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://mykola.bogdiuk.com/arduino/2016/12/28/flickering-lamps.html">
+  <link rel="alternate" type="application/rss+xml" title="Mykola Bogdiuk blog" href="http://mykola.bogdiuk.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Mykola Bogdiuk blog</a>
+    <a class="icon rss-subscribe site-nav" href="/feed.xml">
+      <svg viewBox="1 1 6 6" width="24">
+        <path d="M 1,4 a 3,3 0 0 1 3,3 h 1 a 4,4 0 0 0 -4,-4 z M 1,2 a 5,5 0 0 1 5,5 h 1 a 6,6 0 0 0 -6,-6 z M1,6a1,1 0 1,0 2,0a1,1 0 1,0 -2,0 z"/>
+      </svg><!--[if lt IE 9]>RSS<![endif]-->
+    </a>
+
+    
+    
+
+    
+    
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Тестую мерехтіння ламп</h1>
+    <p class="post-meta">
+	<a href="/arduino/2016/12/28/flickering-lamps.html" class="post-meta"><time datetime="2016-12-28T04:08:29+02:00" itemprop="datePublished">Dec 28, 2016</time></a>
+	
+	
+    </p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Почалось з того, що я помітив боковим зором легеньку дриганість однієї LED лампи.
+Лампи розжарення доволі інертні і за 10мс не встигають втратити яскравість, тому мерехтіння не помітне. А от світлодіод (LED) швидко реагує на подачу струму, тому потребує хорошого драйвера, який триматиме струм постійним. Якщо виробник економить на драйвері - лампа може світити лише 40% часу і мерехтіння буде додатково напрягати очі.</p>
+
+<p>Коли світить лише 1 лампа, перевірити стабільність світла можна швидко провівши рукою вліво-вправо: якщо слід суцільний (continuous), то лампа нормальна, а якщо переривчастий - значить мигає.</p>
+
+<p>Вирішив зробити прилад, щоб точно тестувати лампи на недоліки не розбираючи їх.</p>
+
+<p>Отже, апаратна частина:</p>
+
+<ul>
+  <li>фототранзистор 3DU5C</li>
+  <li>резистор 1kΩ</li>
+  <li>Arduino Nano</li>
+  <li>OLED дисплей на SSD1306.</li>
+</ul>
+
+<p>Програмна частина:</p>
+
+<ul>
+  <li>основи мат. статистики</li>
+  <li>модифікована <a href="http://robotcantalk.blogspot.com/2015/03/interfacing-arduino-with-ssd1306-driven.html">бібліотека роботи з дисплеєм</a></li>
+</ul>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/front.jpg " alt="детектор спереду" />
+<img src="/assets/posts/2016-12-28-flickering-lamps/side.jpg " alt="детектор збоку" /></p>
+
+<p>Отриманий графік цієї лампи (Maxus R50 5W 4100K):</p>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/Maxus R50 5W 4100K.jpg " alt="графік для Maxus R50 5W 4100K" width="500" /></p>
+
+<p>З таким графіком її можна ставити лише в тимчасових кімнатах: коридор, ванна, під’їзд. <code class="highlighter-rouge">Max</code> і <code class="highlighter-rouge">min</code> (2 і 3 рядки) різняться в 27 раз, частота <code class="highlighter-rouge">100±3Hz</code> - близька до межі сприйняття, та все ж помітна оку.</p>
+
+<p>Далі 2 рядки: <code class="highlighter-rouge">percent_flicker = 93%</code> та <code class="highlighter-rouge">flicker_index = 0.3117</code>. Це величини, що використовуються для чисельного представлення миготіння (<a href="http://www.e3tnw.org/Documents/2011%20IES%20flicker%20paper%20poplawski-miller-FINAL.pdf">PDF на цю тему</a>):</p>
+
+<ul>
+  <li><code class="highlighter-rouge">percent_flicker = ((max-min)/(max+min)) * 100%</code></li>
+  <li><code class="highlighter-rouge">flicker_index = area_above_mean / total_area</code>, де <code class="highlighter-rouge">mean</code> - середня освітленість, а <code class="highlighter-rouge">*_area</code> мають розмірність <code class="highlighter-rouge">Lumen*millisecond</code>.</li>
+</ul>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/analysis-painted.jpg " alt="приклад аналізу" width="500" /></p>
+
+<p>На рисунку білі полоси визначають один період, зелена область - приблизна <code class="highlighter-rouge">area_above_mean</code>. Лінія середнього значення проведена не точно, але для ілюстрації принципу згодиться.</p>
+
+<p>Щоб визначити допустимі значення, заміряю лампу розжарення Electrum 60W:</p>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/incandescent.jpg " alt="графік для лампи розжерення 60W" width="500" /></p>
+
+<p>Приблизно як синусоїда. Отже, щоб LED лампа була не гірша за лампу розжарення, значення мають бути: <code class="highlighter-rouge">percent_flicker &lt; 8%</code>, <code class="highlighter-rouge">flicker_index &lt; 0.02</code>. Також в кількох джерелах вказується, що миготіння не відчутне при частоті <code class="highlighter-rouge">&gt;3kHz</code>.</p>
+
+<p>Компактні люмінесцентні лампи (у всіх однакова форма хвилі, <code class="highlighter-rouge">4-6% 0.01..0.017</code>)</p>
+
+<ul>
+  <li>SLS 11W 2700K</li>
+  <li>Electrum FC-111 18W 4000K</li>
+</ul>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/luminescent.jpg " alt="графік для люмінесцентної" width="500" /></p>
+
+<p>LED лампа з хорошим драйвером Videx:</p>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/nice-led.jpg " alt="графік для хорошої LED лампи" width="500" /></p>
+
+<p>Ще тестив цікаву 8W лампу з COB стержнями з aliexpress (Lediary). Графік виглядає як суперпозиція різних хвиль. Чотири графіки показують форму хвилі з різним масштабом (змінюється останній рядок - ширина екрану в мілісекундах і середній рядок <code class="highlighter-rouge">12sp</code> - кількість вимірювань, що усереднюються для отримання 1 точки)</p>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/cob-8W.jpg " alt="графік для хорошої LED лампи" /></p>
+
+<p>Схоже, тут висока частота (декілька kHz) і кожен стержень працює зі своєю частотою: зі збільшенням масштабу індекс та відсоток миготіння збільшуються і стає видно, що різкі переходи просто згладжувались при іншому масштабі. В реалі маємо значення близько <code class="highlighter-rouge">(26%, 0.07)</code> при частотах <code class="highlighter-rouge">1-6kHz</code>. Це наче допустимо (бо частота велика), але драйвер тихенько пищить, тому теж відправляється в чорний список.</p>
+
+<p>Цікаво, що 4W версія цієї ж лампи поводить себе чудово.</p>
+
+<h1 id="section">Білий список</h1>
+<ul>
+  <li>GlobalLED 10W 850Lm (наче суб-бренд Maxus, а лампи кращі)</li>
+  <li>Videx 9W 800Lm, 7W, 5W 460Lm (упаковка не має українського тексту, хоча фірма-пакувальник українська, роблять в Китаї)</li>
+  <li>Svitloton LED 7W 4200K</li>
+  <li>Lediary? 4W COB Warm White Frosted Candle</li>
+</ul>
+
+<p><img src="/assets/posts/2016-12-28-flickering-lamps/nice-lamps.jpg " alt="хороші лампи" width="500" /></p>
+
+<h1 id="section-1">Чорний список</h1>
+<ul>
+  <li>Maxus R50 5W 4100K (1-LED-362 15.07.2013)</li>
+  <li>Lumen LED A60 7W</li>
+  <li>Lediary? 8W COB Warm White Frosted Bubble Ball (пищить)</li>
+</ul>
+
+<h1 id="percentflicker--flickerindex">Приклад розрахунку <code class="highlighter-rouge">percent_flicker</code> та <code class="highlighter-rouge">flicker_index</code></h1>
+<p>Припустимо, що лампа протягом 1ms світить на 90 люмен, наступну 1ms світить на 8 люмен, тухне на 8мс, і знову повторює, тоді:</p>
+
+<ul>
+  <li><code class="highlighter-rouge">percent_flicker = ((90Lm-0Lm)/(90Lm+0Lm)) * 100% = 100%</code></li>
+  <li>сумарна освітленість за період <code class="highlighter-rouge">total_area = 90Lm*1ms + 8Lm*1ms + 0Lm*8ms = 98Lm*ms</code></li>
+  <li>середня освітленість <code class="highlighter-rouge">mean = total_area/period = 98Lm*ms/10ms = 9.8Lm</code></li>
+  <li><code class="highlighter-rouge">flicker_index = area_above_9.8Lm/total_area = 90Lm*ms / 98Lm*ms ≈ 0.918</code></li>
+</ul>
+
+<h1 id="section-2">Обмеження</h1>
+<ul>
+  <li>Максимальна частота вимірювання <code class="highlighter-rouge">≈38.7 ksamples/second</code> =&gt; максимально детектована частота <code class="highlighter-rouge">19kHz</code></li>
+  <li>Точність одиничного вимірювання <code class="highlighter-rouge">±0.5%</code></li>
+  <li>Точність визначення періоду <code class="highlighter-rouge">±1px ≈ samples / 38kHz</code>, де <code class="highlighter-rouge">samples</code> - масштаб, значення 4го рядка</li>
+  <li>Точність визначення частоти <code class="highlighter-rouge">± (freq_calculated * samples / 38kHz) * 100%</code></li>
+  <li>Якщо максимально виміряне значення &lt; 5% (слабке освітлення) - виводиться ERROR: LOW</li>
+  <li>Якщо максимально виміряне значення &gt; 75% (сенсор надто близько до лампи) - виводиться ERROR: HIGH, бо в такому разі можливе обрізання корисних даних</li>
+  <li>Якщо графік прямий або настільки заплутаний, що неможливо визначити частоту - виводиться ERROR: FREQ</li>
+</ul>
+
+<h1 id="section-3">Алгоритм</h1>
+<ol>
+  <li>За одну ітерацію відбувається <code class="highlighter-rouge">256 * samples</code> вимірювань, де <code class="highlighter-rouge">samples</code> - масштаб. Кожні <code class="highlighter-rouge">samples</code> вимірювань усереднюються і заносяться до масиву розміру <code class="highlighter-rouge">256</code>.</li>
+  <li>Екран має розмір <code class="highlighter-rouge">128*64px</code>. Справа <code class="highlighter-rouge">30px</code> зайняті колонкою показників, тому графіку лишається <code class="highlighter-rouge">98*64</code>.</li>
+  <li>Якщо графік так і вивести - від буде “ходити” вліво-вправо, бо кожна ітерація вимірювання може проводитись зі своїм зсувом фази. Щоб стабілізувати, рахується <a href="https://en.wikipedia.org/wiki/Correlation_and_dependence">кореляція</a> виміряного масиву з початковим в кожній точці. Запас для зсуву <code class="highlighter-rouge">256-98 = 158</code> елементів. Таким чином, на екран виведеться та частина графіку, що максимально схожа на 98 елементів початкового вимірювання.</li>
+  <li>За допомогою <a href="https://en.wikipedia.org/wiki/Autocorrelation">автокореляції</a> рахується період хвилі <code class="highlighter-rouge">T</code>, з нього рахується частота.</li>
+  <li>За наведеними вище формулами рахуються <code class="highlighter-rouge">percent_flicker</code> та <code class="highlighter-rouge">flicker_index</code> на діапазоні <code class="highlighter-rouge">[0..T-1]</code> виміряного масиву.</li>
+</ol>
+
+
+  </div>
+
+</article>
+
+
+<div id="disqus_thread"></div>
+<script>
+    /**
+     *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+     *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+     */
+    var disqus_config = function () {
+        this.page.url = "http://mykola.bogdiuk.com/arduino/2016/12/28/flickering-lamps.html";
+        this.page.identifier = "/arduino/2016/12/28/flickering-lamps";
+    };
+    (function() {  // REQUIRED CONFIGURATION VARIABLE: EDIT THE SHORTNAME BELOW
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//mbogdiuk.disqus.com/embed.js';
+        
+        s.setAttribute('data-timestamp', +new Date());
+        s.setAttribute('async', 'true');
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+	
+
+    <div class="footer-col-wrapper">
+  
+
+      <div class="social-media-list">
+          
+          
+          
+	  <a class="icon" href="https://facebook.com/mykola.bogdiuk">
+            <svg version="1.1" viewBox="0 0 266.893 266.895">
+              <path id="f" d="M182.409,262.307v-99.803h33.499l5.016-38.895h-38.515V98.777c0-11.261,3.127-18.935,19.275-18.935 	l20.596-0.009V45.045c-3.562-0.474-15.788-1.533-30.012-1.533c-29.695,0-50.025,18.126-50.025,51.413v28.684h-33.585v38.895h33.585 v99.803H182.409z"/>
+            </svg><!--[if lt IE 9]>Facebook<![endif]-->
+          </a>
+          
+	  <a class="icon" href="https://vk.com/bonial">
+            <svg viewBox="0 0 1000 1000"><path d="M882.3,612.6c0,0,79.2,78.3,98.8,114.5c0.5,0.8,0.8,1.4,0.9,1.7c8,13.4,9.9,23.9,6,31.6c-6.6,12.8-29,19.2-36.6,19.7c0,0-136.1,0-140,0c-9.8,0-30-2.5-54.7-19.6c-18.9-13.2-37.6-34.9-55.8-56.1c-27.1-31.5-50.6-58.8-74.4-58.8c-3,0-6,0.5-8.8,1.5c-18,5.7-40.8,31.3-40.8,99.6c0,21.4-16.9,33.5-28.7,33.5c0,0-61.2,0-64.1,0c-21.9,0-135.6-7.6-236.5-114C123.9,535.9,12.8,274.6,11.8,272.3c-6.9-16.9,7.6-26.1,23.3-26.1h141.4c19,0,25.1,11.5,29.4,21.8c5,11.8,23.5,59,53.9,112.1c49.2,86.3,79.4,121.5,103.6,121.5c4.6,0,8.9-1.1,12.9-3.4c31.6-17.3,25.7-130,24.2-153.3c0-4.5,0-50.3-16.2-72.5c-11.6-15.9-31.3-22.1-43.2-24.3c3.2-4.6,9.9-11.7,18.6-15.8c21.6-10.8,60.7-12.3,99.4-12.3h21.5c42,0.6,52.9,3.3,68.2,7.2c30.8,7.4,31.4,27.3,28.7,95.2c-0.8,19.4-1.6,41.3-1.6,67c0,5.5-0.2,11.6-0.2,17.8c-0.9,34.8-2.2,74.1,22.4,90.2c3.1,2,6.8,3,10.6,3c8.5,0,34.1,0,103.3-118.8c30.4-52.5,53.9-114.4,55.5-119c1.4-2.6,5.5-9.9,10.5-12.8c3.8-2.4,8.9-2.7,11.6-2.7H956c18.1,0,30.4,2.7,32.8,9.6c4,11.1-0.8,45.1-76.7,147.8c-12.8,17.1-24,31.9-33.9,44.8C809.4,539.4,809.4,544,882.3,612.6L882.3,612.6z"/></svg><!--[if lt IE 9]>Vk<![endif]-->
+          </a>
+          
+	  <a class="icon" href="https://stackoverflow.com/users/473359">
+            <svg viewBox="70 70 380 380"><path d="M294.8 361.2l-122 0.1 0-26 122-0.1L294.8 361.2zM377.2 213.7L356.4 93.5l-25.7 4.5 20.9 120.2L377.2 213.7zM297.8 301.8l-121.4-11.2 -2.4 25.9 121.4 11.2L297.8 301.8zM305.8 267.8l-117.8-31.7 -6.8 25.2 117.8 31.7L305.8 267.8zM321.2 238l-105-62 -13.2 22.4 105 62L321.2 238zM346.9 219.7l-68.7-100.8 -21.5 14.7 68.7 100.8L346.9 219.7zM315.5 275.5v106.5H155.6V275.5h-20.8v126.9h201.5V275.5H315.5z"/></svg><!--[if lt IE 9]>StackOverflow<![endif]-->
+          </a>
+          
+	  <a class="icon" href="https://drive2.com/r/volkswagen/4062246863888388357/">
+            <svg viewBox="0 0 1000 1000"><path d="M500,990C229.4,990,10,770.6,10,500C10,229.4,229.4,10,500,10c270.6,0,490,219.4,490,490C990,770.6,770.6,990,500,990z M607.2,865.9c0,0,1.8,0.8,2.7,0.6c1.6,0.3,3.2,1,4.9,1c8.2,0,15.9-4,22.9-10.6C738.2,818,818,738.1,856.8,637.5c-2.2-0.1-4.6-10.1-4.6-15c0-33.6-27-60.8-60.5-61.2c0,0,0,0,0-0.1h-87.2c-16.2,36.8-51.4,67.6-97.3,86.5c0,0-45.9,58.6-45.9,112.5C561.2,814.3,581.2,858.5,607.2,865.9z M591.9,515.3c0-25.4-41.1-45.9-91.9-45.9c-50.7,0-91.9,20.6-91.9,45.9c0,25.4,41.1,45.9,91.9,45.9C550.7,561.3,591.9,540.7,591.9,515.3z M362.3,856.9c7,6.6,14.7,10.6,22.9,10.6c1.7,0,3.3-0.7,4.9-1c0.9,0.3,2.8-0.6,2.8-0.6c25.9-7.5,45.9-51.7,45.9-105.6c0-54-45.9-112.5-45.9-112.5c-45.9-19-81.2-49.7-97.3-86.5h-87.2c0,0,0,0,0,0.1c-33.5,0.4-60.5,27.6-60.5,61.2c0,4.9-2.4,14.9-4.6,15C182,738.1,261.8,818,362.3,856.9z M500,117.2c-162.9,0-301.5,101.9-356.7,245.3c1.5,0.1-10.8,23.4-10.8,38c0,29.6,24,53.6,53.6,53.6c7,0,117.5,0,117.5,0c33.1-54.1,108.5-91.9,196.4-91.9c87.9,0,163.3,37.8,196.4,91.9c0,0,110.5,0,117.5,0c29.6,0,53.6-24,53.6-53.6c0-14.5-12.3-37.9-10.8-38C801.5,219.1,662.9,117.2,500,117.2z"/><path d="M921.4,828.1"/></svg><!--[if lt IE 9]>Drive2<![endif]-->
+          </a>
+      </div>
+
+      <div class="footer-copyright">
+        <p>© 2016 Mykola Bogdiuk</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+ 
+
+  </body>
+
+</html>

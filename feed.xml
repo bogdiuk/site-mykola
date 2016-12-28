@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mykola Bogdiuk blog</title>
+    <description></description>
+    <link>http://mykola.bogdiuk.com/</link>
+    <atom:link href="http://mykola.bogdiuk.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Wed, 28 Dec 2016 06:12:22 +0200</pubDate>
+    <lastBuildDate>Wed, 28 Dec 2016 06:12:22 +0200</lastBuildDate>
+    <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Тестую мерехтіння ламп</title>
+        <description>&lt;p&gt;Почалось з того, що я помітив боковим зором легеньку дриганість однієї LED лампи.
+Лампи розжарення доволі інертні і за 10мс не встигають втратити яскравість, тому мерехтіння не помітне. А от світлодіод (LED) швидко реагує на подачу струму, тому потребує хорошого драйвера, який триматиме струм постійним. Якщо виробник економить на драйвері - лампа може світити лише 40% часу і мерехтіння буде додатково напрягати очі.&lt;/p&gt;
+
+&lt;p&gt;Коли світить лише 1 лампа, перевірити стабільність світла можна швидко провівши рукою вліво-вправо: якщо слід суцільний (continuous), то лампа нормальна, а якщо переривчастий - значить мигає.&lt;/p&gt;
+
+&lt;p&gt;Вирішив зробити прилад, щоб точно тестувати лампи на недоліки не розбираючи їх.&lt;/p&gt;
+
+&lt;p&gt;Отже, апаратна частина:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;фототранзистор 3DU5C&lt;/li&gt;
+  &lt;li&gt;резистор 1kΩ&lt;/li&gt;
+  &lt;li&gt;Arduino Nano&lt;/li&gt;
+  &lt;li&gt;OLED дисплей на SSD1306.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Програмна частина:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;основи мат. статистики&lt;/li&gt;
+  &lt;li&gt;модифікована &lt;a href=&quot;http://robotcantalk.blogspot.com/2015/03/interfacing-arduino-with-ssd1306-driven.html&quot;&gt;бібліотека роботи з дисплеєм&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/front.jpg &quot; alt=&quot;детектор спереду&quot; /&gt;
+&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/side.jpg &quot; alt=&quot;детектор збоку&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Отриманий графік цієї лампи (Maxus R50 5W 4100K):&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/Maxus R50 5W 4100K.jpg &quot; alt=&quot;графік для Maxus R50 5W 4100K&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;З таким графіком її можна ставити лише в тимчасових кімнатах: коридор, ванна, під’їзд. &lt;code class=&quot;highlighter-rouge&quot;&gt;Max&lt;/code&gt; і &lt;code class=&quot;highlighter-rouge&quot;&gt;min&lt;/code&gt; (2 і 3 рядки) різняться в 27 раз, частота &lt;code class=&quot;highlighter-rouge&quot;&gt;100±3Hz&lt;/code&gt; - близька до межі сприйняття, та все ж помітна оку.&lt;/p&gt;
+
+&lt;p&gt;Далі 2 рядки: &lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker = 93%&lt;/code&gt; та &lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index = 0.3117&lt;/code&gt;. Це величини, що використовуються для чисельного представлення миготіння (&lt;a href=&quot;http://www.e3tnw.org/Documents/2011%20IES%20flicker%20paper%20poplawski-miller-FINAL.pdf&quot;&gt;PDF на цю тему&lt;/a&gt;):&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker = ((max-min)/(max+min)) * 100%&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index = area_above_mean / total_area&lt;/code&gt;, де &lt;code class=&quot;highlighter-rouge&quot;&gt;mean&lt;/code&gt; - середня освітленість, а &lt;code class=&quot;highlighter-rouge&quot;&gt;*_area&lt;/code&gt; мають розмірність &lt;code class=&quot;highlighter-rouge&quot;&gt;Lumen*millisecond&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/analysis-painted.jpg &quot; alt=&quot;приклад аналізу&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;На рисунку білі полоси визначають один період, зелена область - приблизна &lt;code class=&quot;highlighter-rouge&quot;&gt;area_above_mean&lt;/code&gt;. Лінія середнього значення проведена не точно, але для ілюстрації принципу згодиться.&lt;/p&gt;
+
+&lt;p&gt;Щоб визначити допустимі значення, заміряю лампу розжарення Electrum 60W:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/incandescent.jpg &quot; alt=&quot;графік для лампи розжерення 60W&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Приблизно як синусоїда. Отже, щоб LED лампа була не гірша за лампу розжарення, значення мають бути: &lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker &amp;lt; 8%&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index &amp;lt; 0.02&lt;/code&gt;. Також в кількох джерелах вказується, що миготіння не відчутне при частоті &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;gt;3kHz&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Компактні люмінесцентні лампи (у всіх однакова форма хвилі, &lt;code class=&quot;highlighter-rouge&quot;&gt;4-6% 0.01..0.017&lt;/code&gt;)&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SLS 11W 2700K&lt;/li&gt;
+  &lt;li&gt;Electrum FC-111 18W 4000K&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/luminescent.jpg &quot; alt=&quot;графік для люмінесцентної&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;LED лампа з хорошим драйвером Videx:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/nice-led.jpg &quot; alt=&quot;графік для хорошої LED лампи&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Ще тестив цікаву 8W лампу з COB стержнями з aliexpress (Lediary). Графік виглядає як суперпозиція різних хвиль. Чотири графіки показують форму хвилі з різним масштабом (змінюється останній рядок - ширина екрану в мілісекундах і середній рядок &lt;code class=&quot;highlighter-rouge&quot;&gt;12sp&lt;/code&gt; - кількість вимірювань, що усереднюються для отримання 1 точки)&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/cob-8W.jpg &quot; alt=&quot;графік для хорошої LED лампи&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Схоже, тут висока частота (декілька kHz) і кожен стержень працює зі своєю частотою: зі збільшенням масштабу індекс та відсоток миготіння збільшуються і стає видно, що різкі переходи просто згладжувались при іншому масштабі. В реалі маємо значення близько &lt;code class=&quot;highlighter-rouge&quot;&gt;(26%, 0.07)&lt;/code&gt; при частотах &lt;code class=&quot;highlighter-rouge&quot;&gt;1-6kHz&lt;/code&gt;. Це наче допустимо (бо частота велика), але драйвер тихенько пищить, тому теж відправляється в чорний список.&lt;/p&gt;
+
+&lt;p&gt;Цікаво, що 4W версія цієї ж лампи поводить себе чудово.&lt;/p&gt;
+
+&lt;h1 id=&quot;section&quot;&gt;Білий список&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;GlobalLED 10W 850Lm (наче суб-бренд Maxus, а лампи кращі)&lt;/li&gt;
+  &lt;li&gt;Videx 9W 800Lm, 7W, 5W 460Lm (упаковка не має українського тексту, хоча фірма-пакувальник українська, роблять в Китаї)&lt;/li&gt;
+  &lt;li&gt;Svitloton LED 7W 4200K&lt;/li&gt;
+  &lt;li&gt;Lediary? 4W COB Warm White Frosted Candle&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/posts/2016-12-28-flickering-lamps/nice-lamps.jpg &quot; alt=&quot;хороші лампи&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;section-1&quot;&gt;Чорний список&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;Maxus R50 5W 4100K (1-LED-362 15.07.2013)&lt;/li&gt;
+  &lt;li&gt;Lumen LED A60 7W&lt;/li&gt;
+  &lt;li&gt;Lediary? 8W COB Warm White Frosted Bubble Ball (пищить)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;percentflicker--flickerindex&quot;&gt;Приклад розрахунку &lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker&lt;/code&gt; та &lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index&lt;/code&gt;&lt;/h1&gt;
+&lt;p&gt;Припустимо, що лампа протягом 1ms світить на 90 люмен, наступну 1ms світить на 8 люмен, тухне на 8мс, і знову повторює, тоді:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker = ((90Lm-0Lm)/(90Lm+0Lm)) * 100% = 100%&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;сумарна освітленість за період &lt;code class=&quot;highlighter-rouge&quot;&gt;total_area = 90Lm*1ms + 8Lm*1ms + 0Lm*8ms = 98Lm*ms&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;середня освітленість &lt;code class=&quot;highlighter-rouge&quot;&gt;mean = total_area/period = 98Lm*ms/10ms = 9.8Lm&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index = area_above_9.8Lm/total_area = 90Lm*ms / 98Lm*ms ≈ 0.918&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;section-2&quot;&gt;Обмеження&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;Максимальна частота вимірювання &lt;code class=&quot;highlighter-rouge&quot;&gt;≈38.7 ksamples/second&lt;/code&gt; =&amp;gt; максимально детектована частота &lt;code class=&quot;highlighter-rouge&quot;&gt;19kHz&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Точність одиничного вимірювання &lt;code class=&quot;highlighter-rouge&quot;&gt;±0.5%&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Точність визначення періоду &lt;code class=&quot;highlighter-rouge&quot;&gt;±1px ≈ samples / 38kHz&lt;/code&gt;, де &lt;code class=&quot;highlighter-rouge&quot;&gt;samples&lt;/code&gt; - масштаб, значення 4го рядка&lt;/li&gt;
+  &lt;li&gt;Точність визначення частоти &lt;code class=&quot;highlighter-rouge&quot;&gt;± (freq_calculated * samples / 38kHz) * 100%&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Якщо максимально виміряне значення &amp;lt; 5% (слабке освітлення) - виводиться ERROR: LOW&lt;/li&gt;
+  &lt;li&gt;Якщо максимально виміряне значення &amp;gt; 75% (сенсор надто близько до лампи) - виводиться ERROR: HIGH, бо в такому разі можливе обрізання корисних даних&lt;/li&gt;
+  &lt;li&gt;Якщо графік прямий або настільки заплутаний, що неможливо визначити частоту - виводиться ERROR: FREQ&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;section-3&quot;&gt;Алгоритм&lt;/h1&gt;
+&lt;ol&gt;
+  &lt;li&gt;За одну ітерацію відбувається &lt;code class=&quot;highlighter-rouge&quot;&gt;256 * samples&lt;/code&gt; вимірювань, де &lt;code class=&quot;highlighter-rouge&quot;&gt;samples&lt;/code&gt; - масштаб. Кожні &lt;code class=&quot;highlighter-rouge&quot;&gt;samples&lt;/code&gt; вимірювань усереднюються і заносяться до масиву розміру &lt;code class=&quot;highlighter-rouge&quot;&gt;256&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Екран має розмір &lt;code class=&quot;highlighter-rouge&quot;&gt;128*64px&lt;/code&gt;. Справа &lt;code class=&quot;highlighter-rouge&quot;&gt;30px&lt;/code&gt; зайняті колонкою показників, тому графіку лишається &lt;code class=&quot;highlighter-rouge&quot;&gt;98*64&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Якщо графік так і вивести - від буде “ходити” вліво-вправо, бо кожна ітерація вимірювання може проводитись зі своїм зсувом фази. Щоб стабілізувати, рахується &lt;a href=&quot;https://en.wikipedia.org/wiki/Correlation_and_dependence&quot;&gt;кореляція&lt;/a&gt; виміряного масиву з початковим в кожній точці. Запас для зсуву &lt;code class=&quot;highlighter-rouge&quot;&gt;256-98 = 158&lt;/code&gt; елементів. Таким чином, на екран виведеться та частина графіку, що максимально схожа на 98 елементів початкового вимірювання.&lt;/li&gt;
+  &lt;li&gt;За допомогою &lt;a href=&quot;https://en.wikipedia.org/wiki/Autocorrelation&quot;&gt;автокореляції&lt;/a&gt; рахується період хвилі &lt;code class=&quot;highlighter-rouge&quot;&gt;T&lt;/code&gt;, з нього рахується частота.&lt;/li&gt;
+  &lt;li&gt;За наведеними вище формулами рахуються &lt;code class=&quot;highlighter-rouge&quot;&gt;percent_flicker&lt;/code&gt; та &lt;code class=&quot;highlighter-rouge&quot;&gt;flicker_index&lt;/code&gt; на діапазоні &lt;code class=&quot;highlighter-rouge&quot;&gt;[0..T-1]&lt;/code&gt; виміряного масиву.&lt;/li&gt;
+&lt;/ol&gt;
+
+</description>
+        <pubDate>Wed, 28 Dec 2016 04:08:29 +0200</pubDate>
+        <link>http://mykola.bogdiuk.com/arduino/2016/12/28/flickering-lamps.html</link>
+        <guid isPermaLink="true">http://mykola.bogdiuk.com/arduino/2016/12/28/flickering-lamps.html</guid>
+        
+        
+        <category>arduino</category>
+        
+      </item>
+    
+      <item>
+        <title>Initial post</title>
+        <description>&lt;p&gt;В коментах до цього посту можна писати зауваження щодо відображення і роботи сайту.&lt;/p&gt;
+
+&lt;p&gt;Користувачам NoScript: для відображення секції коментарів потрібні скрипти з &lt;code class=&quot;highlighter-rouge&quot;&gt;disqus.com&lt;/code&gt; та &lt;code class=&quot;highlighter-rouge&quot;&gt;disquscdn.com&lt;/code&gt;. &lt;code class=&quot;highlighter-rouge&quot;&gt;Disquscdn&lt;/code&gt; в свою чергу намагається звернутись до &lt;code class=&quot;highlighter-rouge&quot;&gt;facebook.net&lt;/code&gt; та &lt;code class=&quot;highlighter-rouge&quot;&gt;google-analytics.com&lt;/code&gt; - їх можна блокувати.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 28 Dec 2016 04:07:12 +0200</pubDate>
+        <link>http://mykola.bogdiuk.com/blog/2016/12/28/initial.html</link>
+        <guid isPermaLink="true">http://mykola.bogdiuk.com/blog/2016/12/28/initial.html</guid>
+        
+        
+        <category>blog</category>
+        
+      </item>
+    
+  </channel>
+</rss>
