@@ -208,7 +208,8 @@ pre {
           margin-right: 0; } }
 
 .rss-subscribe {
-  float: right; }
+  float: right;
+  line-height: 36px; }
 
 .site-footer {
   border-top: 1px solid #e8e8e8;
