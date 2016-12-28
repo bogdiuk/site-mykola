@@ -298,11 +298,13 @@ pre {
   border-top: 0px; }
 
 .post-thumbnail {
-  float: left;
   padding-right: 10px;
   position: relative;
   z-index: 3; }
 
+@media screen and (min-width: 600px) {
+  .post-thumbnail {
+    float: left; } }
 .fadeout {
   display: block;
   position: relative;
